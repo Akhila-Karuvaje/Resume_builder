@@ -1,8 +1,6 @@
 import os
-from flask import Flask, render_template, redirect, url_for
-from flask_login import LoginManager, login_required, current_user
+from flask import Flask, render_template
 from models import db, User, Resume, CoverLetter, Job
-from auth import auth_bp
 from profile_bp import profile_bp
 from resume_bp import resume_bp
 from cover_bp import cover_bp
@@ -21,28 +19,17 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    login_manager = LoginManager()
-    login_manager.login_view = 'auth.login'
-    login_manager.init_app(app)
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return db.session.get(User, int(user_id))
-
     # Blueprints
-    app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp, url_prefix="/profile")
     app.register_blueprint(resume_bp, url_prefix="/resumes")
     app.register_blueprint(cover_bp, url_prefix="/cover-letters")
     app.register_blueprint(jobs_bp, url_prefix="/jobs")
 
+    # Root page (no login required)
     @app.route("/")
-    @login_required
-    def dashboard():
-        resumes = Resume.query.filter_by(user_id=current_user.id).order_by(Resume.updated_at.desc()).all()
-        covers = CoverLetter.query.filter_by(user_id=current_user.id).order_by(CoverLetter.updated_at.desc()).all()
-        jobs = Job.query.filter_by(user_id=current_user.id).all()
-        return render_template("dashboard.html", resumes=resumes, covers=covers, jobs=jobs)
+    def homepage():
+        # Simple welcome page
+        return "<h1>Resume Builder</h1>"
 
     return app
 
