@@ -9,32 +9,41 @@ from jobs_bp import jobs_bp
 def create_app():
     app = Flask(__name__, instance_relative_config=True, static_folder="static", template_folder="templates")
     os.makedirs(app.instance_path, exist_ok=True)
+
+    # Secret key for session (update in Render environment)
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+
+    # Database configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'app.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
 
-    # Auto-create DB tables on startup (safe for SQLite dev)
+    # Auto-create DB tables on startup
     with app.app_context():
         db.create_all()
 
-    # Blueprints
+    # Register Blueprints
     app.register_blueprint(profile_bp, url_prefix="/profile")
     app.register_blueprint(resume_bp, url_prefix="/resumes")
     app.register_blueprint(cover_bp, url_prefix="/cover-letters")
     app.register_blueprint(jobs_bp, url_prefix="/jobs")
 
-    # Root page (no login required)
+    # Root page → Dashboard
     @app.route("/")
     def homepage():
-        # Simple welcome page
+        return render_template('dashboard.html')  # direct dashboard
+
+    # Optional: catch-all route to avoid old login URLs
+    @app.route("/<path:path>")
+    def catch_all(path):
         return render_template('dashboard.html')
 
     return app
 
+# Create app instance
 app = create_app()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Render's port if provided
+    port = int(os.environ.get("PORT", 5000))  # Render's port or default 5000
     app.run(host="0.0.0.0", port=port, debug=True)
