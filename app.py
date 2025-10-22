@@ -29,7 +29,7 @@ def create_app():
     @app.route("/")
     def homepage():
         # Simple welcome page
-        return "<h1>Resume Builder</h1>"
+        return render_template('dashboard.html')
 
     return app
 
