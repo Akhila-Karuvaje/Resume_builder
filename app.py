@@ -1,6 +1,8 @@
 import os
 from flask import Flask, render_template
+from flask_login import LoginManager, login_required, current_user
 from models import db, User, Resume, CoverLetter, Job
+from auth import auth_bp
 from profile_bp import profile_bp
 from resume_bp import resume_bp
 from cover_bp import cover_bp
@@ -23,7 +25,17 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+    # Login manager
+    login_manager = LoginManager()
+    login_manager.login_view = 'auth.login'
+    login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return db.session.get(User, int(user_id))
+
     # Register blueprints
+    app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp, url_prefix="/profile")
     app.register_blueprint(resume_bp, url_prefix="/resumes")
     app.register_blueprint(cover_bp, url_prefix="/cover-letters")
@@ -31,26 +43,17 @@ def create_app():
 
     # Root page → Dashboard
     @app.route("/", endpoint="dashboard")
-    def homepage():
-        # Pass resumes, covers, jobs for dashboard
-        from models import Resume, CoverLetter, Job
-        resumes = Resume.query.all()
-        covers = CoverLetter.query.all()
-        jobs = Job.query.all()
-        return render_template('dashboard.html', resumes=resumes, covers=covers, jobs=jobs)
-
-    # Catch-all route to avoid old login URLs
-    @app.route("/<path:path>")
-    def catch_all(path):
-        resumes = Resume.query.all()
-        covers = CoverLetter.query.all()
-        jobs = Job.query.all()
-        return render_template('dashboard.html', resumes=resumes, covers=covers, jobs=jobs)
+    @login_required
+    def dashboard():
+        resumes = Resume.query.filter_by(user_id=current_user.id).order_by(Resume.updated_at.desc()).all()
+        covers = CoverLetter.query.filter_by(user_id=current_user.id).order_by(CoverLetter.updated_at.desc()).all()
+        jobs = Job.query.filter_by(user_id=current_user.id).all()
+        return render_template("dashboard.html", resumes=resumes, covers=covers, jobs=jobs)
 
     return app
 
 app = create_app()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render's port
+    port = int(os.environ.get("PORT", 5000))  # For deployment platforms like Render
     app.run(host="0.0.0.0", port=port, debug=True)
