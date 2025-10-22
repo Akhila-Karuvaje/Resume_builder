@@ -10,22 +10,31 @@
   <nav class="topnav">
     <div class="brand">ATS Resume Builder</div>
     <div class="navlinks">
+      <!-- Dashboard link points to homepage route -->
       <a href="{{ url_for('dashboard') }}">Dashboard</a>
+
+      <!-- Profile blueprint link -->
       <a href="{{ url_for('profile.edit_profile') }}">Profile</a>
+
+      <!-- Jobs blueprint link -->
       <a href="{{ url_for('jobs.board') }}">Job Tracker</a>
+
+      <!-- Logout link, make sure auth blueprint exists -->
       <a href="{{ url_for('auth.logout') }}">Logout</a>
     </div>
   </nav>
+
   <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flashwrap">
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
-      </div>
-    {% endif %}
+      {% if messages %}
+        <div class="flashwrap">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
     {% endwith %}
+
     {% block content %}{% endblock %}
   </main>
 </body>
